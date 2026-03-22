@@ -526,7 +526,7 @@ body.light-mode #askForm {
   </form>
 <script>
   
-const GEMINI_API_KEY = "AIzaSyCTcgz0n_oC-cUKNcHb5RPCdhkQFrmx3ik";  
+const GEMINI_API_KEY = "AIzaSyARJF00zJe6mBMAOPeF5CX07jvWv7OmMoA";  
 
 const form = document.getElementById("askForm");
 const chatBox = document.getElementById("chatBox");
@@ -609,214 +609,173 @@ form.addEventListener("submit", async (e) => {
     return;
   }
 
-  // User message bubble
+  // USER MESSAGE
   if (question) {
     const userBubble = document.createElement("div");
     userBubble.className = "chat-bubble user-bubble align-self-end";
     userBubble.textContent = question;
     chatBox.appendChild(userBubble);
-    chatBox.scrollTop = chatBox.scrollHeight;
   }
-  
 
-  // Loading bubble
+  // AI LOADING
   const aiBubble = document.createElement("div");
   aiBubble.className = "chat-bubble ai-bubble align-self-start";
   aiBubble.textContent = "AI is thinking...";
   chatBox.appendChild(aiBubble);
   chatBox.scrollTop = chatBox.scrollHeight;
 
-// IMAGE GENERATION MODE
-// IMAGE GENERATION MODE
-if (currentMode === "image") {
+  // IMAGE MODE
+  if (currentMode === "image") {
+    try {
+      const res = await fetch("http://127.0.0.1:5000/ask-image", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({ prompt: question })
+      });
 
-  aiBubble.textContent = "🎨 Generating image...";
+      const data = await res.json();
 
+      if (!data.success) {
+        aiBubble.textContent = "❌ " + data.error;
+        return;
+      }
+
+      aiBubble.innerHTML = `<img src="${data.image}" style="max-width:100%;border-radius:12px;">`;
+
+    } catch (err) {
+      aiBubble.textContent = "❌ Image generation failed.";
+      console.error(err);
+    }
+
+    questionInput.value = "";
+    return;
+  }
+
+  // TEXT MODE
   try {
-    const response = await fetch("http://localhost:5000/ask-image", {
+    let contents = [
+      { role: "user", parts: [{ text: question || "" }] }
+    ];
+
+    if (file) {
+      const base64Data = await toBase64(file);
+      contents.push({
+        role: "user",
+        parts: [{
+          inline_data: {
+            mime_type: "application/pdf",
+            data: base64Data
+          }
+        }]
+      });
+    }
+
+    const response = await fetch("http://127.0.0.1:5000/ask", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({ prompt: question })
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({ contents })
     });
 
-    const data = await response.json();
-
-    if (!data.success) {
-      aiBubble.textContent = "❌ " + data.error;
-      return;
+    if (!response.ok) {
+      throw new Error("Server error: " + response.status);
     }
+
+    const data = await response.json();
+    const aiText = data.candidates?.[0]?.content?.parts?.[0]?.text || "No response";
 
     aiBubble.textContent = "";
 
-    const img = document.createElement("img");
-    img.src = data.image;
-    img.style.maxWidth = "100%";
-    img.style.borderRadius = "12px";
+    // CONTENT
+    const contentDiv = document.createElement("div");
+    contentDiv.className = "ai-content";
+    contentDiv.innerHTML = marked.parse(aiText);
+    aiBubble.appendChild(contentDiv);
 
-    aiBubble.appendChild(img);
-
-    if (question) {
-      saveChat(question, chatBox.innerHTML);
-    }
-
-  } catch (err) {
-    aiBubble.textContent = "❌ Image generation failed.";
-    console.error(err);
-  }
-
-  questionInput.value = "";
-  return;
-}
-
-  // Prepare Gemini API payload
-  let contents = [
-    { role: "user", parts: [{ text: question || "" }] }
-  ];
-
-  // If PDF is attached, convert + include
-  if (file) {
-    const base64Data = await toBase64(file);
-
-    contents.push({
-      role: "user",
-      parts: [{
-        inline_data: {
-          mime_type: "application/pdf",
-          data: base64Data
-        }
-      }]
+    // CODE HIGHLIGHT
+    contentDiv.querySelectorAll("pre code").forEach(block => {
+      hljs.highlightElement(block);
     });
-  }
 
-  // CALL GEMINI API
-  try {
-    const response = await fetch("http://localhost:5000/ask", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ contents })
-});
-
-
-    const data = await response.json();
-
-    // Extract the AI text
-    const aiText = data.candidates?.[0]?.content?.parts?.[0]?.text || "No response from Gemini.";
-    // Replace loading text
-    aiBubble.textContent = "";
-
-    // Build paragraph text
-    // Enable markdown rendering
-// Create content wrapper
-const contentDiv = document.createElement("div");
-contentDiv.className = "ai-content";
-contentDiv.innerHTML = marked.parse(aiText);
-
-// Add to bubble
-aiBubble.appendChild(contentDiv);
-
-// Highlight code
-contentDiv.querySelectorAll("pre code").forEach((block) => {
-  hljs.highlightElement(block);
-});
-
-
-
-    // Header buttons
+    // 🔥 BUTTONS
     const header = document.createElement("div");
     header.className = "d-flex justify-content-end gap-2 mb-2";
 
+    // COPY
     const copyBtn = document.createElement("button");
     copyBtn.className = "btn btn-sm btn-outline-light";
     copyBtn.textContent = "📋 Copy";
     copyBtn.onclick = () => {
       navigator.clipboard.writeText(aiText);
       copyBtn.textContent = "✔ Copied";
-      setTimeout(() => (copyBtn.textContent = "📋 Copy"), 2000);
+      setTimeout(() => copyBtn.textContent = "📋 Copy", 2000);
     };
-    
-// Speak and Stop button
+
+    // PDF
+    const pdfBtn = document.createElement("button");
+    pdfBtn.className = "btn btn-sm btn-outline-light";
+    pdfBtn.textContent = "📄 PDF";
+    pdfBtn.onclick = () => {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
+
+      const text = contentDiv.innerText;
+      const lines = doc.splitTextToSize(text, 180);
+
+      let y = 10;
+      lines.forEach(line => {
+        if (y > 280) {
+          doc.addPage();
+          y = 10;
+        }
+        doc.text(line, 10, y);
+        y += 7;
+      });
+
+      doc.save("AI_Response.pdf");
+    };
+
+    // SPEAK
     const speakBtn = document.createElement("button");
-speakBtn.className = "btn btn-sm btn-outline-light";
-speakBtn.innerHTML = "🔊 Speak";
-
-let utterance = null;
-
-speakBtn.onclick = () => {
-
-  // 🔴 If already speaking → STOP
-  if (speechSynthesis.speaking || speechSynthesis.pending) {
-    speechSynthesis.cancel();
+    speakBtn.className = "btn btn-sm btn-outline-light";
     speakBtn.innerHTML = "🔊 Speak";
-    return;
-  }
 
-  // 🟢 Start speaking
-  utterance = new SpeechSynthesisUtterance(aiText);
-  utterance.lang = "en-US";
-  utterance.rate = 1;
-  utterance.pitch = 1;
+    speakBtn.onclick = () => {
+      if (speechSynthesis.speaking) {
+        speechSynthesis.cancel();
+        speakBtn.innerHTML = "🔊 Speak";
+        return;
+      }
 
-  utterance.onend = () => {
-    speakBtn.innerHTML = "🔊 Speak";
-  };
+      const utter = new SpeechSynthesisUtterance(aiText);
+      speechSynthesis.speak(utter);
+      speakBtn.innerHTML = "⏹ Stop";
 
-  utterance.onerror = () => {
-    speakBtn.innerHTML = "🔊 Speak";
-  };
-
-  speechSynthesis.speak(utterance);
-  speakBtn.innerHTML = "⏹ Stop";
-};
-    pdfBtn.onclick = function () {
-
-  const content = this.closest(".chat-bubble").querySelector(".ai-content");
-  const text = content.innerText;
-
-  const { jsPDF } = window.jspdf;
-  const doc = new jsPDF();
-
-  const margin = 15;
-  const pageWidth = doc.internal.pageSize.getWidth() - margin * 2;
-  const pageHeight = doc.internal.pageSize.getHeight();
-
-  const lines = doc.splitTextToSize(text, pageWidth);
-
-  let cursorY = margin;
-
-  lines.forEach(line => {
-    if (cursorY > pageHeight - margin) {
-      doc.addPage();
-      cursorY = margin;
-    }
-    doc.text(line, margin, cursorY);
-    cursorY += 7;
-  });
-
-  doc.save("AI_Response.pdf");
-};
+      utter.onend = () => {
+        speakBtn.innerHTML = "🔊 Speak";
+      };
+    };
 
     header.appendChild(copyBtn);
     header.appendChild(pdfBtn);
     header.appendChild(speakBtn);
-    aiBubble.prepend(header);
-    // Save chat after AI response
-if (question) {
-  saveChat(question, chatBox.innerHTML);
-}
 
+    aiBubble.prepend(header);
+
+    // SAVE CHAT
+    if (question) {
+      saveChat(question, chatBox.innerHTML);
+    }
 
   } catch (error) {
-    aiBubble.textContent = "❌ Error contacting Gemini API.";
-    console.error(error);
+    console.error("ERROR:", error);
+    aiBubble.textContent = "❌ Something went wrong. Check console.";
   }
-  // Reset UI
+
+  // RESET
   questionInput.value = "";
-  questionInput.style.height = "auto";
   attachmentInput.value = "";
   fileInfo.style.display = "none";
-  questionInput.focus();
+  questionInput.style.height = "auto";
 });
 </script>
 <script>
