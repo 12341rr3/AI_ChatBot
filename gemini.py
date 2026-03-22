@@ -7,39 +7,37 @@ app = Flask(__name__)
 CORS(app)  # allow frontend access
 
 # 🔐 Set your API key (use environment variable ideally)
-genai.configure(api_key="AIzaSyAQM97tp2ypGK1mcggZ6DsteN0Qp2BKOaA")
+genai.configure(api_key="AIzaSyARJF00zJe6mBMAOPeF5CX07jvWv7OmMoA")
 
 model = genai.GenerativeModel("gemini-2.5-flash")
 
 
 # ===============================
 # 🧠 TEXT RESPONSE API
-# ===============================
+# 
+#===============================
+
 @app.route("/ask", methods=["POST"])
+
 def ask():
+    print("🔥 API HIT")
     try:
         data = request.json
         contents = data.get("contents", [])
 
-        # ✅ Extract text properly
-        user_text = ""
-        for item in contents:
-            for part in item.get("parts", []):
-                if "text" in part:
-                    user_text += part["text"] + "\n"
+        print("🟢 REQUEST:", contents)
 
-        print("🟢 USER:", user_text)
+        response = model.generate_content(contents)
 
-        # ✅ Correct Gemini call
-        response = model.generate_content(user_text)
+        ai_text = response.text if hasattr(response, "text") else "No response"
 
-        print("🟢 GEMINI:", response.text)
+        print("🟢 GEMINI:", ai_text)
 
         return jsonify({
             "candidates": [{
                 "content": {
                     "parts": [{
-                        "text": response.text
+                        "text": ai_text
                     }]
                 }
             }]
@@ -49,30 +47,6 @@ def ask():
         print("❌ BACKEND ERROR:", e)
         return jsonify({"error": str(e)}), 500
 # ===============================
-# 🎨 IMAGE GENERATION API
-# ===============================
-@app.route("/ask-image", methods=["POST"])
-def ask_image():
-    try:
-        data = request.json
-        prompt = data.get("prompt")
-
-        import urllib.parse
-        encoded_prompt = urllib.parse.quote(prompt)
-
-        # 🔥 More reliable endpoint
-        image_url = f"https://pollinations.ai/p/{encoded_prompt}"
-
-        return jsonify({
-            "success": True,
-            "image": image_url
-        })
-
-    except Exception as e:
-        return jsonify({
-            "success": False,
-            "error": str(e)
-        })
 
 # ===============================
 # 🚀 RUN SERVER
