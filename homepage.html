@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>AI Chatbot</title>
+
+    <!-- Google Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: "Poppins", sans-serif;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+
+            /* Beautiful HD Background */
+            background-image: url("https://images.unsplash.com/photo-1504384308090-c894fdcc538d");
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            position: relative;
+        }
+
+        /* Dark overlay */
+        body::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.55);
+            z-index: 1;
+        }
+
+        /* Floating animated shapes */
+        .floating-shape {
+            position: absolute;
+            width: 120px;
+            height: 120px;
+            background: rgba(255,255,255,0.08);
+            border-radius: 50%;
+            animation: float 8s ease-in-out infinite;
+            z-index: 2;
+            filter: blur(2px);
+        }
+        .shape1 { top: 10%; left: 15%; animation-delay: 0s; }
+        .shape2 { bottom: 18%; right: 10%; animation-delay: 2s; }
+        .shape3 { top: 50%; right: 30%; animation-delay: 4s; }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0) scale(1); }
+            50% { transform: translateY(-30px) scale(1.1); }
+        }
+
+        .content {
+            position: relative;
+            z-index: 5;
+            text-align: center;
+            color: white;
+            padding: 20px;
+            animation: fadeInDown 1.3s ease;
+        }
+
+        @keyframes fadeInDown {
+            0% { opacity: 0; transform: translateY(-40px); }
+            100% { opacity: 1; transform: translateY(0); }
+        }
+
+        .title {
+            font-size: 45px;
+            font-weight: 600;
+            text-shadow: 0px 0px 15px rgba(0,0,0,0.8);
+            animation: fadeIn 1.5s ease;
+        }
+
+        .subtitle {
+            font-size: 18px;
+            margin-bottom: 35px;
+            opacity: 0.9;
+            animation: fadeIn 2s ease;
+        }
+
+        @keyframes fadeIn {
+            from {opacity: 0;}
+            to {opacity: 1;}
+        }
+
+        /* Glass Card */
+        .chat-container {
+            width: 350px;
+            padding: 25px;
+            margin: auto;
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 15px;
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255,255,255,0.3);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+            transition: transform .3s ease;
+            animation: slideUp 1.4s ease;
+        }
+
+        .chat-container:hover {
+            transform: scale(1.04);
+        }
+
+        @keyframes slideUp {
+            0% { transform: translateY(40px); opacity: 0; }
+            100% { transform: translateY(0); opacity: 1; }
+        }
+
+        /* Logo Animation */
+        .graphic {
+            width: 120px;
+            margin-bottom: 15px;
+            animation: pulseGlow 3s infinite ease-in-out;
+        }
+
+        @keyframes pulseGlow {
+            0% { filter: drop-shadow(0 0 4px rgba(255,255,255,0.4)); }
+            50% { filter: drop-shadow(0 0 15px rgba(255,255,255,1)); }
+            100% { filter: drop-shadow(0 0 4px rgba(255,255,255,0.4)); }
+        }
+
+        button {
+            width: 100%;
+            margin-top: 15px;
+            padding: 12px 15px;
+            border-radius: 50px;
+            border: none;
+            font-size: 17px;
+            font-weight: 600;
+            cursor: pointer;
+            color: white;
+
+            background: linear-gradient(45deg, #007bff, #00c6ff);
+            box-shadow: 0px 4px 12px rgba(0, 123, 255, 0.5);
+            transition: 0.3s;
+            animation: fadeIn 2s ease;
+        }
+
+        button:hover {
+            background: linear-gradient(45deg, #0056b3, #0099cc);
+            transform: translateY(-2px);
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- Floating Background Shapes -->
+    <div class="floating-shape shape1"></div>
+    <div class="floating-shape shape2"></div>
+    <div class="floating-shape shape3"></div>
+
+    <div class="content">
+        <h1 class="title">Welcome to AI Chatbot</h1>
+        <p class="subtitle">Your smart assistant to answer queries instantly</p>
+
+        <div class="chat-container">
+            <img class="graphic" src="https://cdn-icons-png.flaticon.com/512/4712/4712100.png" alt="AI Icon">
+
+            <p style="color:white; font-size:18px;">Start chatting with the AI now!</p>
+            <button onclick="startChat()">Open Chat</button>
+        </div>
+    </div>
+
+    <script>
+        function startChat() {
+            window.location.href = "/register";
+        }
+    </script>
+
+</body>
+</html>
