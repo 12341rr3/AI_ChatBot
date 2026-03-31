@@ -7,7 +7,7 @@ app = Flask(__name__)
 CORS(app)  # allow frontend access
 
 # 🔐 Set your API key (use environment variable ideally)
-genai.configure(api_key="AIzaSyAm6_8aFG2-INkRGW0xCutrhKa46CTG_hU")
+genai.configure(api_key="AIzaSyCan_9rGL_sTiolp9CEUiYS7skCWSwmrP0
 
 model = genai.GenerativeModel("gemini-2.5-flash")
 
